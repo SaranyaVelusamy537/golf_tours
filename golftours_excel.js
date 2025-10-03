@@ -16,21 +16,21 @@ async function generateExcel(data) {
     const day = data.itinerary[dayKey];
     sheet.addRow([day.date]);
 
-    // Add golf rounds
+    // Golf rounds
     if (day.Golf_round) {
       day.Golf_round.forEach((g) => {
         sheet.addRow(['Golf Course', g.course, g.Golf, g.golf_hint || '']);
       });
     }
 
-    // Add hotels
+    // Hotel stays
     if (day.hotel_stay) {
       day.hotel_stay.forEach((h) => {
         sheet.addRow(['Hotel', h.hotel, h.Hotel_Single, h.Hotel_Sharing]);
       });
     }
 
-    // Add transport
+    // Transport
     if (day.transport) {
       day.transport.forEach((t) => {
         sheet.addRow(['Transport', t.transport_type, t.total_people, t.rate_per_person]);
@@ -44,4 +44,5 @@ async function generateExcel(data) {
   return workbook.xlsx.writeBuffer();
 }
 
+// ✅ Correct CommonJS export
 module.exports = { generateExcel };
