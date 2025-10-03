@@ -23,36 +23,34 @@ async function generateExcelWithDynamicItinerary(data) {
 
   // Fill itinerary
   const dayStartRow = 15; // Row where Day 1 starts in template
-  const dayRowIncrement = 4; // Rows per day (Date, Golf, Transport)
+  const dayRowIncrement = 3; // Each day uses 3 rows (Date/Hotel, Golf, Transport)
   const itineraryDays = Object.keys(data.itinerary);
 
   itineraryDays.forEach((dayKey, index) => {
     const dayData = data.itinerary[dayKey];
     const currentRow = dayStartRow + index * dayRowIncrement;
 
-    // Date
-    sheet.getCell(`A${currentRow}`).value = dayData.date;
-
-    // Hotel
+    // Row 1: Date + Hotel
+    sheet.getCell(`A${currentRow}`).value = dayData.date; // Date
     if (dayData.hotel_stay && dayData.hotel_stay.length > 0) {
       const hotel = dayData.hotel_stay[0];
-      sheet.getCell(`B${currentRow}`).value = hotel.hotel;
-      sheet.getCell(`C${currentRow}`).value = hotel.Hotel_Sharing;
-      sheet.getCell(`D${currentRow}`).value = hotel.Hotel_Single;
+      sheet.getCell(`B${currentRow}`).value = hotel.hotel;           // Hotel Name
+      sheet.getCell(`C${currentRow}`).value = hotel.Hotel_Sharing;   // Hotel Sharing
+      sheet.getCell(`D${currentRow}`).value = hotel.Hotel_Single;    // Hotel Single
     }
 
-    // Golf
+    // Row 2: Day of Week + Golf
     if (dayData.Golf_round && dayData.Golf_round.length > 0) {
       const golf = dayData.Golf_round[0];
       sheet.getCell(`B${currentRow + 1}`).value = golf.course; // Golf Club Name
-      sheet.getCell(`E${currentRow + 1}`).value = golf.Golf;
+      sheet.getCell(`E${currentRow + 1}`).value = golf.Golf;   // Golf rate/value
     }
 
-    // Transport
+    // Row 3: Transport
     if (dayData.transport && dayData.transport.length > 0) {
       const transport = dayData.transport[0];
-      sheet.getCell(`B${currentRow + 2}`).value = transport.transport_type;
-      sheet.getCell(`F${currentRow + 2}`).value = transport.rate_per_person;
+      sheet.getCell(`B${currentRow + 2}`).value = transport.transport_type; // Transport type
+      sheet.getCell(`F${currentRow + 2}`).value = transport.rate_per_person; // Transport rate
     }
   });
 
