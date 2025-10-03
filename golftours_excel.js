@@ -1,70 +1,77 @@
 const ExcelJS = require('exceljs');
-const axios = require('axios');
+const path = require('path');
 
-async function generateExcelWithDynamicItinerary(data) {
-  // Load template from GitHub
-  const response = await axios.get(
-    'https://raw.githubusercontent.com/SaranyaVelusamy537/golf_tours/main/public/templates/Golf_Tours_Template.xlsx',
-    { responseType: 'arraybuffer' }
-  );
-
+async function generateExcel(data) {
+  const templatePath = path.join(__dirname, 'Golf_Tours_Template.xlsx'); // ensure the template is in the same folder
   const workbook = new ExcelJS.Workbook();
-  await workbook.xlsx.load(response.data);
+  await workbook.xlsx.readFile(templatePath);
 
   const sheet = workbook.getWorksheet('Quotation Sheet');
 
-  // Fill general info
-  sheet.getCell('K5').value = data.lead_name;
-  sheet.getCell('L5').value = `${data.team_member} Group`;
+  // Fill top-level info
+  sheet.getCell('K5').value = `${data.lead_name} Group`; // Client Lead Name
+  sheet.getCell('L5').value = ''; // optional if you have more details
+  sheet.getCell('M5').value = ''; // optional if you have more details
   sheet.getCell('I16').value = data.golfers;
+  sheet.getCell('J16').value = data.golfers;
   sheet.getCell('K16').value = data.non_golfers;
+  sheet.getCell('L16').value = data.non_golfers;
 
-  // Map itinerary dynamically
-  Object.keys(data.itinerary).forEach((dayKey, i) => {
+  // Fill FIT rates
+  sheet.getCell('I12').value = data.margin.golfer_margins.total_fit_rate_per_sharing;
+  sheet.getCell('J12').value = data.margin.golfer_margins.total_fit_rate_per_single;
+  sheet.getCell('K12').value = data.margin.non_golfer_margins.total_fit_rate_per_nongolfer_sharing;
+  sheet.getCell('L12').value = data.margin.non_golfer_margins.total_fit_rate_per_nongolfer_single;
+
+  // Map itinerary days
+  const dayRowStartMap = {
+    day1: 15,
+    day2: 19,
+    day3: 23,
+    day4: 27,
+    day5: 31,
+    day6: 35,
+    day7: 39,
+    day8: 43,
+    day9: 47,
+    day10: 51,
+    day11: 55,
+    day12: 59
+  };
+
+  Object.keys(data.itinerary).forEach((dayKey) => {
     const day = data.itinerary[dayKey];
+    const startRow = dayRowStartMap[dayKey];
+    if (!startRow) return;
 
-    // Find the row that contains "Day 1", "Day 2", etc.
-    const dayHeader = `Day ${i + 1}`;
-    let dayRow;
-    sheet.eachRow((row, rowNumber) => {
-      const firstCell = row.getCell(1).value;
-      if (firstCell && firstCell.toString().includes(dayHeader)) {
-        dayRow = rowNumber;
-      }
-    });
+    // Date
+    sheet.getCell(`A${startRow}`).value = day.date;
 
-    if (!dayRow) {
-      console.warn(`Cannot find row for ${dayHeader}`);
-      return;
-    }
-
-    // Fill Date (assume first row after Day header)
-    sheet.getCell(`A${dayRow + 1}`).value = day.date;
-
-    // Fill Hotel (second row after Day header)
-    if (day.hotel_stay && day.hotel_stay.length > 0) {
+    // Hotel
+    if (day.hotel_stay && day.hotel_stay[0]) {
       const hotel = day.hotel_stay[0];
-      sheet.getCell(`B${dayRow + 2}`).value = hotel.hotel; // Hotel Name
-      sheet.getCell(`C${dayRow + 2}`).value = hotel.Hotel_Sharing;
-      sheet.getCell(`D${dayRow + 2}`).value = hotel.Hotel_Single;
+      sheet.getCell(`B${startRow}`).value = hotel.hotel; // Hotel Name
+      sheet.getCell(`C${startRow}`).value = hotel.Hotel_Sharing; // Sharing
+      sheet.getCell(`D${startRow}`).value = hotel.Hotel_Single; // Single
     }
 
-    // Fill Golf (third row after Day header)
-    if (day.Golf_round && day.Golf_round.length > 0) {
+    // Golf
+    if (day.Golf_round && day.Golf_round[0]) {
       const golf = day.Golf_round[0];
-      sheet.getCell(`B${dayRow + 3}`).value = golf.course;
-      sheet.getCell(`E${dayRow + 3}`).value = golf.Golf;
+      sheet.getCell(`B${startRow + 1}`).value = golf.course; // Golf Club Name
+      sheet.getCell(`E${startRow + 1}`).value = golf.Golf; // Golf rate
     }
 
-    // Fill Transport (fourth row after Day header)
-    if (day.transport && day.transport.length > 0) {
-      const transport = day.transport[0];
-      sheet.getCell(`B${dayRow + 4}`).value = transport.transport_type;
-      sheet.getCell(`F${dayRow + 4}`).value = transport.rate_per_person;
+    // Transport
+    if (day.transport && day.transport[0]) {
+      const t = day.transport[0];
+      sheet.getCell(`B${startRow + 2}`).value = t.transport_type; // Transport type
+      sheet.getCell(`F${startRow + 2}`).value = t.rate_per_person; // Rate per person
     }
   });
 
+  // Return Excel buffer
   return workbook.xlsx.writeBuffer();
 }
 
-module.exports = { generateExcelWithDynamicItinerary };
+module.exports = { generateExcel };
