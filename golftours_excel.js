@@ -1,11 +1,11 @@
 const ExcelJS = require('exceljs');
 const path = require('path');
 
-async function generateExcelWithDynamicItinerary(data) {
-  // Load the pre-made template
-  const path = require('path');
+async function generateExcelWithDynamicItinerary(data) {  // Load the pre-made template
+  
 
-  const templatePath = path.join(__dirname, '..', 'public', 'templates', 'Golf_Tours_Template.xlsx');
+  const templatePath = path.join(__dirname, 'public/templates/Golf_Tours_Template.xlsx');  
+
 
   const workbook = new ExcelJS.Workbook();
   await workbook.xlsx.readFile(templatePath);
