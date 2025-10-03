@@ -1,52 +1,70 @@
 const ExcelJS = require('exceljs');
 const axios = require('axios');
 
-async function generateExcel(data) {
-  // 1️⃣ Fetch template from GitHub
+async function generateExcelWithDynamicItinerary(data) {
+  // Load template from GitHub
   const response = await axios.get(
     'https://raw.githubusercontent.com/SaranyaVelusamy537/golf_tours/main/public/templates/Golf_Tours_Template.xlsx',
     { responseType: 'arraybuffer' }
   );
 
-  // 2️⃣ Load workbook from buffer
   const workbook = new ExcelJS.Workbook();
   await workbook.xlsx.load(response.data);
 
-  // 3️⃣ Get the correct sheet
   const sheet = workbook.getWorksheet('Quotation Sheet');
-  if (!sheet) throw new Error("Worksheet 'Quotation Sheet' not found");
 
-  // 4️⃣ Inject values into specific cells
-  sheet.getCell('K5').value = `Client ${data.lead_name} Group`; // Lead Name
-  sheet.getCell('L5').value = data.lead_name;
-
+  // Fill general info
+  sheet.getCell('K5').value = data.lead_name;
+  sheet.getCell('L5').value = `${data.team_member} Group`;
   sheet.getCell('I16').value = data.golfers;
-  sheet.getCell('J16').value = data.golfers;
   sheet.getCell('K16').value = data.non_golfers;
-  sheet.getCell('L16').value = data.non_golfers;
 
-  // Fit rates example
-  sheet.getCell('I12').value = data.margin.golfer_margins.total_fit_rate_per_sharing;
-  sheet.getCell('J12').value = data.margin.golfer_margins.total_fit_rate_per_single;
-  sheet.getCell('K12').value = data.margin.non_golfer_margins.total_fit_rate_per_sharing;
-  sheet.getCell('L12').value = data.margin.non_golfer_margins.total_fit_rate_per_nongolfer_single;
+  // Map itinerary dynamically
+  Object.keys(data.itinerary).forEach((dayKey, i) => {
+    const day = data.itinerary[dayKey];
 
-  // Quoted rates per golfer (sharing)
-  sheet.getCell('J21').value = data.margin.golfer_margins.quotated_rate_per_sharing.margin_40;
-  sheet.getCell('K21').value = data.margin.golfer_margins.quotated_rate_per_sharing.margin_35;
-  sheet.getCell('L21').value = data.margin.golfer_margins.quotated_rate_per_sharing.margin_30;
-  sheet.getCell('M21').value = data.margin.golfer_margins.quotated_rate_per_sharing.margin_25;
+    // Find the row that contains "Day 1", "Day 2", etc.
+    const dayHeader = `Day ${i + 1}`;
+    let dayRow;
+    sheet.eachRow((row, rowNumber) => {
+      const firstCell = row.getCell(1).value;
+      if (firstCell && firstCell.toString().includes(dayHeader)) {
+        dayRow = rowNumber;
+      }
+    });
 
-  // Quoted rates per golfer (single)
-  sheet.getCell('J27').value = data.margin.golfer_margins.quotated_rate_per_single.margin_40;
-  sheet.getCell('K27').value = data.margin.golfer_margins.quotated_rate_per_single.margin_35;
-  sheet.getCell('L27').value = data.margin.golfer_margins.quotated_rate_per_single.margin_30;
-  sheet.getCell('M27').value = data.margin.golfer_margins.quotated_rate_per_single.margin_25;
+    if (!dayRow) {
+      console.warn(`Cannot find row for ${dayHeader}`);
+      return;
+    }
 
-  // … Repeat for all other cells you want to inject
+    // Fill Date (assume first row after Day header)
+    sheet.getCell(`A${dayRow + 1}`).value = day.date;
 
-  // 5️⃣ Return buffer for sending as response
+    // Fill Hotel (second row after Day header)
+    if (day.hotel_stay && day.hotel_stay.length > 0) {
+      const hotel = day.hotel_stay[0];
+      sheet.getCell(`B${dayRow + 2}`).value = hotel.hotel; // Hotel Name
+      sheet.getCell(`C${dayRow + 2}`).value = hotel.Hotel_Sharing;
+      sheet.getCell(`D${dayRow + 2}`).value = hotel.Hotel_Single;
+    }
+
+    // Fill Golf (third row after Day header)
+    if (day.Golf_round && day.Golf_round.length > 0) {
+      const golf = day.Golf_round[0];
+      sheet.getCell(`B${dayRow + 3}`).value = golf.course;
+      sheet.getCell(`E${dayRow + 3}`).value = golf.Golf;
+    }
+
+    // Fill Transport (fourth row after Day header)
+    if (day.transport && day.transport.length > 0) {
+      const transport = day.transport[0];
+      sheet.getCell(`B${dayRow + 4}`).value = transport.transport_type;
+      sheet.getCell(`F${dayRow + 4}`).value = transport.rate_per_person;
+    }
+  });
+
   return workbook.xlsx.writeBuffer();
 }
 
-module.exports = { generateExcel };
+module.exports = { generateExcelWithDynamicItinerary };
