@@ -1,40 +1,68 @@
-// Fill itinerary
-const dayCellMap = [
-  { date: 15, hotel: 15, golf: 16, transport: 17 }, // Day 1
-  { date: 20, hotel: 20, golf: 21, transport: 22 }, // Day 2
-  { date: 38, hotel: 38, golf: 39, transport: 40 }, // Day 3
-  { date: 56, hotel: 56, golf: 57, transport: 58 }, // Day 4
-  { date: 74, hotel: 74, golf: 75, transport: 76 }, // Day 5
-  // add more if template has more days
-];
+const ExcelJS = require('exceljs');
+const path = require('path');
 
-const itineraryDays = Object.keys(data.itinerary);
+async function generateExcelWithDynamicItinerary(data) {
+  const templatePath = path.join(__dirname, 'public/templates/Golf_Tours_Template.xlsx');  
 
-itineraryDays.forEach((dayKey, index) => {
-  const dayData = data.itinerary[dayKey];
-  const map = dayCellMap[index];
-  if (!map) return; // skip if no mapping
+  const workbook = new ExcelJS.Workbook();
+  await workbook.xlsx.readFile(templatePath);
 
-  // Row 1: Date + Hotel
-  sheet.getCell(`A${map.date}`).value = dayData.date; // Date
-  if (dayData.hotel_stay && dayData.hotel_stay.length > 0) {
-    const hotel = dayData.hotel_stay[0];
-    sheet.getCell(`B${map.hotel}`).value = hotel.hotel;           // Hotel Name
-    sheet.getCell(`C${map.hotel}`).value = hotel.Hotel_Sharing;   // Hotel Sharing
-    sheet.getCell(`D${map.hotel}`).value = hotel.Hotel_Single;    // Hotel Single
-  }
+  const sheet = workbook.getWorksheet('Quotation Sheet');
 
-  // Row 2: Day of Week + Golf
-  if (dayData.Golf_round && dayData.Golf_round.length > 0) {
-    const golf = dayData.Golf_round[0];
-    sheet.getCell(`B${map.golf}`).value = golf.course; // Golf Club Name
-    sheet.getCell(`E${map.golf}`).value = golf.Golf;   // Golf rate/value
-  }
+  // Fill basic info
+  sheet.getCell('K5').value = data.lead_name + ' Group';
+  sheet.getCell('L5').value = data.team_member;
+  sheet.getCell('I16').value = data.golfers;
+  sheet.getCell('K16').value = data.non_golfers;
 
-  // Row 3: Transport
-  if (dayData.transport && dayData.transport.length > 0) {
-    const transport = dayData.transport[0];
-    sheet.getCell(`B${map.transport}`).value = transport.transport_type; // Transport type
-    sheet.getCell(`F${map.transport}`).value = transport.rate_per_person; // Transport rate
-  }
-});
+  // Fill FIT rates
+  sheet.getCell('I12').value = data.margin.golfer_margins.total_fit_rate_per_sharing;
+  sheet.getCell('J12').value = data.margin.golfer_margins.total_fit_rate_per_single;
+  sheet.getCell('K12').value = data.margin.non_golfer_margins.total_fit_rate_per_nongolfer_sharing;
+  sheet.getCell('L12').value = data.margin.non_golfer_margins.total_fit_rate_per_nongolfer_single;
+
+  // Fill itinerary using fixed row map
+  const dayCellMap = [
+    { date: 15, hotel: 15, golf: 16, transport: 17 }, // Day 1
+    { date: 20, hotel: 20, golf: 21, transport: 22 }, // Day 2
+    { date: 38, hotel: 38, golf: 39, transport: 40 }, // Day 3
+    { date: 56, hotel: 56, golf: 57, transport: 58 }, // Day 4
+    { date: 74, hotel: 74, golf: 75, transport: 76 }, // Day 5
+    // add more if template has more days
+  ];
+
+  const itineraryDays = Object.keys(data.itinerary);
+
+  itineraryDays.forEach((dayKey, index) => {
+    const dayData = data.itinerary[dayKey];
+    const map = dayCellMap[index];
+    if (!map) return;
+
+    // Row 1: Date + Hotel
+    sheet.getCell(`A${map.date}`).value = dayData.date;
+    if (dayData.hotel_stay && dayData.hotel_stay.length > 0) {
+      const hotel = dayData.hotel_stay[0];
+      sheet.getCell(`B${map.hotel}`).value = hotel.hotel;
+      sheet.getCell(`C${map.hotel}`).value = hotel.Hotel_Sharing;
+      sheet.getCell(`D${map.hotel}`).value = hotel.Hotel_Single;
+    }
+
+    // Row 2: Day of Week + Golf
+    if (dayData.Golf_round && dayData.Golf_round.length > 0) {
+      const golf = dayData.Golf_round[0];
+      sheet.getCell(`B${map.golf}`).value = golf.course;
+      sheet.getCell(`E${map.golf}`).value = golf.Golf;
+    }
+
+    // Row 3: Transport
+    if (dayData.transport && dayData.transport.length > 0) {
+      const transport = dayData.transport[0];
+      sheet.getCell(`B${map.transport}`).value = transport.transport_type;
+      sheet.getCell(`F${map.transport}`).value = transport.rate_per_person;
+    }
+  });
+
+  return workbook.xlsx.writeBuffer();
+}
+
+module.exports = { generateExcelWithDynamicItinerary };
