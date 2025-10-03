@@ -1,6 +1,6 @@
 const express = require('express');
 const app = express();
-const port = process.env.PORT || 10000; // Use Render's PORT or fallback to 10000
+const port = process.env.PORT || 3000; // Use Render's PORT or fallback to 10000
 
 // Middleware to parse JSON if needed
 app.use(express.json());
