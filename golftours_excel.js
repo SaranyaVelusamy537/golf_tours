@@ -1,40 +1,47 @@
 const ExcelJS = require('exceljs');
-const path = require('path');
 
-module.exports = async function generateExcel(finalJson) {
-    const templatePath = path.join(__dirname, 'public/templates/Golf_Tours_Template.xlsx');
-    const outputPath = path.join(__dirname, 'public/templates/Golf_Tours_Generated.xlsx');
+async function generateExcel(data) {
+  const workbook = new ExcelJS.Workbook();
+  const sheet = workbook.addWorksheet('Quotation Sheet');
 
-    const workbook = new ExcelJS.Workbook();
-    await workbook.xlsx.readFile(templatePath);
+  // Example headers
+  sheet.addRow(['Team Member', 'Lead Name', 'Golfers', 'Non-Golfers']);
+  sheet.addRow([data.team_member, data.lead_name, data.golfers, data.non_golfers]);
 
-    const worksheet = workbook.getWorksheet('Quotation Sheet'); // use your actual sheet name
+  sheet.addRow([]);
+  sheet.addRow(['Itinerary']);
 
-    const data = finalJson[0];
+  // ✅ Loop through itinerary days
+  Object.keys(data.itinerary).forEach((dayKey) => {
+    const day = data.itinerary[dayKey];
+    sheet.addRow([day.date]);
 
-    Object.keys(data.itinerary).forEach((dayKey, index) => {
-        const day = data.itinerary[dayKey];
-        worksheet.getCell(`B${index + 2}`).value = day.Golf_round[0].course;
-        worksheet.getCell(`C${index + 2}`).value = day.hotel_stay[0].hotel;
-        worksheet.getCell(`D${index + 2}`).value = day.transport[0].transport_type;
-        worksheet.getCell(`E${index + 2}`).value = day.day_total[0].Combined_Single;
-        worksheet.getCell(`F${index + 2}`).value = day.day_total[0].Combined_Sharing;
-    });
+    // Add golf rounds
+    if (day.Golf_round) {
+      day.Golf_round.forEach((g) => {
+        sheet.addRow(['Golf Course', g.course, g.Golf, g.golf_hint || '']);
+      });
+    }
 
-    worksheet.getCell('B20').value = data.trip_total.total_golf;
-    worksheet.getCell('B21').value = data.trip_total.total_hotel_single;
-    worksheet.getCell('B22').value = data.trip_total.total_hotel_sharing;
-    worksheet.getCell('B23').value = data.trip_total.total_transportation;
+    // Add hotels
+    if (day.hotel_stay) {
+      day.hotel_stay.forEach((h) => {
+        sheet.addRow(['Hotel', h.hotel, h.Hotel_Single, h.Hotel_Sharing]);
+      });
+    }
 
-    worksheet.getCell('D20').value = data.margin.golfer_margins.total_fit_rate_per_single;
-    worksheet.getCell('D21').value = data.margin.golfer_margins.total_fit_rate_per_sharing;
+    // Add transport
+    if (day.transport) {
+      day.transport.forEach((t) => {
+        sheet.addRow(['Transport', t.transport_type, t.total_people, t.rate_per_person]);
+      });
+    }
 
-    worksheet.getCell('E20').value = data.margin.non_golfer_margins.total_fit_rate_per_nongolfer_single;
-    worksheet.getCell('E21').value = data.margin.non_golfer_margins.total_fit_rate_per_nongolfer_sharing;
+    sheet.addRow([]);
+  });
 
-    worksheet.getCell('F20').value = data.total_tour_margin.margin_40_total;
-    worksheet.getCell('F21').value = data.total_tour_margin.margin_35_total;
+  // Return Excel buffer
+  return workbook.xlsx.writeBuffer();
+}
 
-    await workbook.xlsx.writeFile(outputPath);
-    return outputPath;
-};
+module.exports = { generateExcel };
