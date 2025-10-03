@@ -1,21 +1,22 @@
 const express = require('express');
-const generateExcel = require('./golftours_excel');
-const path = require('path');
-
 const app = express();
+const port = process.env.PORT || 10000; // Use Render's PORT or fallback to 10000
+
+// Middleware to parse JSON if needed
 app.use(express.json());
 
-app.post('/generate-excel', async (req, res) => {
-  try {
-    const finalJson = req.body; // Input JSON with rates and itinerary
-    const outputPath = await generateExcel(finalJson);
-
-    res.download(outputPath, 'Golf_Tours_Generated.xlsx');
-  } catch (err) {
-    console.error(err);
-    res.status(500).send('Error generating Excel');
-  }
+// Example route to generate Excel
+app.get('/generate-excel', async (req, res) => {
+    try {
+        const generateExcel = require('./golftours_excel');
+        await generateExcel(); // Make sure golftours_excel.js exports a function
+        res.send('Excel generated successfully');
+    } catch (err) {
+        console.error(err);
+        res.status(500).send('Error generating Excel');
+    }
 });
 
-const PORT = process.env.PORT || 10000;
-app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+app.listen(port, () => {
+    console.log(`Server running on port ${port}`);
+});
