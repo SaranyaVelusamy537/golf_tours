@@ -2,13 +2,11 @@ const express = require('express');
 const bodyParser = require('body-parser');
 const { generateExcelWithDynamicItinerary } = require('./golftours_excel.js');
 
-const app = express(); // ✅ Define app before using it
+const app = express();
 const PORT = process.env.PORT || 10000;
 
-// Middleware to parse JSON
 app.use(bodyParser.json());
 
-// POST endpoint to generate Excel
 app.post('/generate-excel', async (req, res) => {
   try {
     const data = req.body;
@@ -35,7 +33,6 @@ app.post('/generate-excel', async (req, res) => {
   }
 });
 
-// Start server
 app.listen(PORT, () => {
   console.log(`🚀 Server running on port ${PORT}`);
 });
