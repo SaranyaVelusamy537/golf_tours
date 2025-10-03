@@ -1,0 +1,13 @@
+{
+  "name": "golf_tours",
+  "version": "1.0.0",
+  "description": "Golf Tours Excel generation service",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "exceljs": "^4.3.0"
+  }
+}
