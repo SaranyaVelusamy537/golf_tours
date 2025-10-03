@@ -1,56 +1,41 @@
-// server.js
-import express from 'express';
-import bodyParser from 'body-parser';
-import fs from 'fs';
-import { generateExcel } from './golftours_excel.js'; // your existing Excel generator
+const express = require('express');
+const bodyParser = require('body-parser');
+const { generateExcel } = require('./golftours_excel.js');
 
 const app = express();
+const PORT = process.env.PORT || 10000;
 
-// Use bodyParser to automatically parse JSON bodies
-app.use(bodyParser.json({ limit: '10mb' })); // adjust limit as needed
+// Middleware to parse JSON
+app.use(bodyParser.json());
 
-// Endpoint to generate Excel
+// POST endpoint to generate Excel
 app.post('/generate-excel', async (req, res) => {
   try {
-    let data = req.body;
+    const data = req.body;
 
-    // Safeguard: if body is a string, parse it
-    if (typeof data === 'string') {
-      data = JSON.parse(data);
-    }
-
-    // Check if essential properties exist
+    // ✅ Ensure itinerary exists
     if (!data || !data.itinerary) {
-      return res.status(400).json({ error: 'Invalid data: itinerary missing' });
+      return res.status(400).json({ error: "Missing required field: itinerary" });
     }
 
-    // Call your existing generateExcel function
-    const workbook = await generateExcel(data); // should return a Buffer or Stream
+    const buffer = await generateExcel(data);
 
-    // Send the Excel file as response
     res.setHeader(
       'Content-Disposition',
-      `attachment; filename="golf_tour.xlsx"`
+      'attachment; filename="Quotation Sheet.xlsx"'
     );
     res.setHeader(
       'Content-Type',
       'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
     );
 
-    // If generateExcel returns a Buffer
-    res.send(workbook);
-
-    // If generateExcel returns a stream:
-    // workbook.pipe(res);
-
-  } catch (err) {
-    console.error('Excel generation error:', err);
-    res.status(500).json({ error: 'Error generating Excel', details: err.message });
+    res.send(buffer);
+  } catch (error) {
+    console.error("Excel generation error:", error);
+    res.status(500).json({ error: "Error generating Excel", details: error.message });
   }
 });
 
-// Start server
-const PORT = process.env.PORT || 10000;
 app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
+  console.log(`🚀 Server running on port ${PORT}`);
 });
