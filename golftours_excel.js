@@ -15,6 +15,12 @@ async function generateExcelWithDynamicItinerary(data) {
   sheet.getCell('I16').value = data.golfers;
   sheet.getCell('K16').value = data.non_golfers;
 
+  // Fill FIT rates
+  // sheet.getCell('I12').value = data.margin.golfer_margins.total_fit_rate_per_sharing;
+  // sheet.getCell('J12').value = data.margin.golfer_margins.total_fit_rate_per_single;
+  // sheet.getCell('K12').value = data.margin.non_golfer_margins.total_fit_rate_per_nongolfer_sharing;
+  // sheet.getCell('L12').value = data.margin.non_golfer_margins.total_fit_rate_per_nongolfer_single;
+
   // Fill itinerary using fixed row map
   const dayCellMap = [
     { date: 15, hotel: 15, golf: 16, transport: 17 }, // Day 1
@@ -29,6 +35,7 @@ async function generateExcelWithDynamicItinerary(data) {
     { date: 60, hotel: 60, golf: 61, transport: 62 }, // Day 10
     { date: 65, hotel: 65, golf: 66, transport: 67 }, // Day 11
     { date: 70, hotel: 70, golf: 71, transport: 72 }, // Day 12
+    // add more if template has more days
   ];
 
   const itineraryDays = Object.keys(data.itinerary);
@@ -62,14 +69,21 @@ async function generateExcelWithDynamicItinerary(data) {
     }
   });
 
-  // Convert workbook to buffer
+  // --- Only change: return buffer with dynamic file name ---
   const buffer = await workbook.xlsx.writeBuffer();
 
-  // Generate dynamic file name based on lead_name
-  const fileName = `${data.lead_name.replace(/\s+/g, '_')}_Golf_Tour_Proposal.xlsx`;
-
-  // Return both buffer and filename
-  return { buffer, fileName };
+  return [
+    {
+      json: data, // keep your existing JSON
+      binary: {
+        excelFile: {
+          data: buffer.toString('base64'),
+          mimeType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+          fileName: `${data.lead_name.replace(/\s+/g, '_')}_Group.xlsx`
+        }
+      }
+    }
+  ];
 }
 
 module.exports = { generateExcelWithDynamicItinerary };
