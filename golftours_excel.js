@@ -69,7 +69,14 @@ async function generateExcelWithDynamicItinerary(data) {
     }
   });
 
-  return workbook.xlsx.writeBuffer();
+const groupName = data.lead_name + ' Group';
+const groupFilename = groupName.trim().toLowerCase().replace(/\s+/g, '_') + '.xlsx';
+
+return send_file(output, 
+                 mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                 download_name=groupFilename,
+                 as_attachment=True);
+
 }
 
 module.exports = { generateExcelWithDynamicItinerary };
