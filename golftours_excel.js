@@ -16,10 +16,10 @@ async function generateExcelWithDynamicItinerary(data) {
   sheet.getCell('K16').value = data.non_golfers;
 
   // Fill FIT rates
-  sheet.getCell('I12').value = data.margin.golfer_margins.total_fit_rate_per_sharing;
-  sheet.getCell('J12').value = data.margin.golfer_margins.total_fit_rate_per_single;
-  sheet.getCell('K12').value = data.margin.non_golfer_margins.total_fit_rate_per_nongolfer_sharing;
-  sheet.getCell('L12').value = data.margin.non_golfer_margins.total_fit_rate_per_nongolfer_single;
+  // sheet.getCell('I12').value = data.margin.golfer_margins.total_fit_rate_per_sharing;
+  // sheet.getCell('J12').value = data.margin.golfer_margins.total_fit_rate_per_single;
+  // sheet.getCell('K12').value = data.margin.non_golfer_margins.total_fit_rate_per_nongolfer_sharing;
+  // sheet.getCell('L12').value = data.margin.non_golfer_margins.total_fit_rate_per_nongolfer_single;
 
   // Fill itinerary using fixed row map
   const dayCellMap = [
