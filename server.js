@@ -16,10 +16,11 @@ app.post('/generate-excel', async (req, res) => {
     }
 
     const buffer = await generateExcelWithDynamicItinerary(data);
+    const group_filename = data.lead_name.trim().replace(/\s+/g, "_") + ".xlsx";
 
     res.setHeader(
       'Content-Disposition',
-      'attachment; filename="Quotation Sheet.xlsx"'
+      'attachment; filename="${group_filename}"'
     );
     res.setHeader(
       'Content-Type',
