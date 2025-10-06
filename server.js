@@ -20,7 +20,7 @@ app.post('/generate-excel', async (req, res) => {
 
     res.setHeader(
       'Content-Disposition',
-      'attachment; filename="data.lead_name".xlsx"'
+      'attachment; filename=data.lead_name.xlsx"'
     );
     res.setHeader(
       'Content-Type',
