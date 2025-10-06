@@ -169,18 +169,17 @@ Regards,
 Your AI Agent
 `;
 
-  return {
-    json: { subject, body },
-    binary: {
-      excelFile: {
-        data: excelBuffer,  // raw bytes
-        mimeType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-        fileName: `${data.lead_name}_Quotation.xlsx`
+return {
+json: { subject, body },
+binary: {
+  excelFile: {
+    data: excelBuffer,  // raw bytes
+    mimeType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    fileName: `${data.lead_name}_Quotation.xlsx`
   }
-}
+  }
+};
 
-    }
-  };
 }
 
 module.exports = { generateExcelWithDynamicItinerary };
