@@ -3,7 +3,7 @@ const path = require('path');
 
 async function generateExcelWithDynamicItinerary(data) {
   // ---------- Excel generation (unchanged) ----------
-  const templatePath = path.join(__dirname, 'public/templates/Golf_Tours_Template.xlsx');
+  const templatePath = path.join(__dirname, 'public/templates/Golf_Tours_Template.xlsx');  
   const workbook = new ExcelJS.Workbook();
   await workbook.xlsx.readFile(templatePath);
   const sheet = workbook.getWorksheet('Quotation Sheet');
@@ -14,22 +14,24 @@ async function generateExcelWithDynamicItinerary(data) {
   sheet.getCell('I16').value = data.golfers;
   sheet.getCell('K16').value = data.non_golfers;
 
+  // Fill itinerary using fixed row map
   const dayCellMap = [
-    { date: 15, day_of_week:16, hotel: 15, golf: 16, transport: 17 },
-    { date: 20, day_of_week:21, hotel: 20, golf: 21, transport: 22 },
-    { date: 25, day_of_week:26, hotel: 25, golf: 26, transport: 27 },
-    { date: 30, day_of_week:31, hotel: 30, golf: 31, transport: 32 },
-    { date: 35, day_of_week:36, hotel: 35, golf: 36, transport: 37 },
-    { date: 40, day_of_week:41, hotel: 40, golf: 41, transport: 42 },
-    { date: 45, day_of_week:46, hotel: 45, golf: 46, transport: 47 },
-    { date: 50, day_of_week:50, hotel: 50, golf: 51, transport: 52 },
-    { date: 55, day_of_week:56, hotel: 55, golf: 56, transport: 57 },
-    { date: 60, day_of_week:61, hotel: 60, golf: 61, transport: 62 },
-    { date: 65, day_of_week:66, hotel: 65, golf: 66, transport: 67 },
-    { date: 70, day_of_week:71, hotel: 70, golf: 71, transport: 72 },
+    { date: 15, day_of_week:16, hotel: 15, golf: 16, transport: 17 }, // Day 1
+    { date: 20, day_of_week:21, hotel: 20, golf: 21, transport: 22 }, // Day 2
+    { date: 25, day_of_week:26, hotel: 25, golf: 26, transport: 27 }, // Day 3
+    { date: 30, day_of_week:31, hotel: 30, golf: 31, transport: 32 }, // Day 4
+    { date: 35, day_of_week:36, hotel: 35, golf: 36, transport: 37 }, // Day 5
+    { date: 40, day_of_week:41, hotel: 40, golf: 41, transport: 42 }, // Day 6
+    { date: 45, day_of_week:46, hotel: 45, golf: 46, transport: 47 }, // Day 7
+    { date: 50, day_of_week:50, hotel: 50, golf: 51, transport: 52 }, // Day 8
+    { date: 55, day_of_week:56, hotel: 55, golf: 56, transport: 57 }, // Day 9
+    { date: 60, day_of_week:61, hotel: 60, golf: 61, transport: 62 }, // Day 10
+    { date: 65, day_of_week:66, hotel: 65, golf: 66, transport: 67 }, // Day 11
+    { date: 70, day_of_week:71, hotel: 70, golf: 71, transport: 72 }, // Day 12
   ];
 
   const itineraryDays = Object.keys(data.itinerary);
+
   itineraryDays.forEach((dayKey, index) => {
     const dayData = data.itinerary[dayKey];
     const map = dayCellMap[index];
@@ -58,7 +60,7 @@ async function generateExcelWithDynamicItinerary(data) {
     }
   });
 
-  // Generate Excel buffer (unchanged)
+  // Write Excel to buffer (keep original)
   const excelBuffer = await workbook.xlsx.writeBuffer();
 
   // ---------- Email template generation ----------
@@ -70,7 +72,7 @@ async function generateExcelWithDynamicItinerary(data) {
   }
 
   const subject = `Golf Tour Proposal - ${data.lead_name}`;
-  
+
   let groupSize = `${data.golfers} Golfers`;
   if (data.non_golfers && data.non_golfers > 0) {
     groupSize += ` + ${data.non_golfers} Non Golfer${data.non_golfers > 1 ? 's' : ''}`;
@@ -78,7 +80,7 @@ async function generateExcelWithDynamicItinerary(data) {
 
   const hotelNights = {};
   Object.values(data.itinerary).forEach(day => {
-    const hotelName = day.hotel_stay?.length ? day.hotel_stay[0].hotel : null;
+    const hotelName = day.hotel_stay && day.hotel_stay.length ? day.hotel_stay[0].hotel : null;
     if (hotelName && hotelName.toLowerCase() !== "no hotel") {
       hotelNights[hotelName] = (hotelNights[hotelName] || 0) + 1;
     }
@@ -93,8 +95,8 @@ async function generateExcelWithDynamicItinerary(data) {
   let previousHotel = null;
   const golfRounds = Object.values(data.itinerary)
     .map((day, idx, arr) => {
-      const hotelName = day.hotel_stay?.length ? day.hotel_stay[0].hotel : null;
-      const courseObj = day.Golf_round?.length ? day.Golf_round[0] : { course: "No Golf", Golf: 0, golf_hint: "Not Available" };
+      const hotelName = day.hotel_stay && day.hotel_stay.length ? day.hotel_stay[0].hotel : null;
+      const courseObj = day.Golf_round && day.Golf_round.length ? day.Golf_round[0] : { course: "No Golf", Golf: 0, golf_hint: "Not Available" };
       const courseName = courseObj.course;
       const golfRate = courseObj.Golf || 0;
       const golfHint = courseObj.golf_hint || "";
@@ -169,10 +171,13 @@ Regards,
 Your AI Agent
 `;
 
-  // ✅ Return both Excel buffer and email template
+  // ✅ Return both email + Excel buffer
   return {
-    excelBuffer,  // unchanged format
-    email: { subject, body }
+    excelBuffer, // same binary Excel format as before
+    email: {
+      subject,
+      body
+    }
   };
 }
 
