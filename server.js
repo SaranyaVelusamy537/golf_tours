@@ -1,4 +1,3 @@
-//server.js
 const express = require('express');
 const bodyParser = require('body-parser');
 const { generateExcelWithDynamicItinerary } = require('./golftours_excel.js');
@@ -16,8 +15,15 @@ app.post('/generate-excel', async (req, res) => {
       return res.status(400).json({ error: "Missing required field: itinerary" });
     }
 
-    const buffer = await generateExcelWithDynamicItinerary(data);
-    const group_filename = data.lead_name.trim().replace(/\s+/g, "_") + ".xlsx";
+    // Get buffer from generator
+    const excelBuffer = await generateExcelWithDynamicItinerary(data);
+
+    // Build email template separately (you can call a helper here or include logic)
+    const subject = `Golf Tour Proposal - ${data.lead_name}`;
+    const body = `Hi ${data.team_member},\n\nYour AI agent has generated the proposal for ${data.lead_name}.`;
+
+    // Set proper headers for Excel
+    const group_filename = (data.lead_name || 'quotation').trim().replace(/\s+/g, "_") + ".xlsx";
     res.setHeader(
       'Content-Disposition',
       `attachment; filename="${group_filename}"; filename*=UTF-8''${encodeURIComponent(group_filename)}`
@@ -27,7 +33,12 @@ app.post('/generate-excel', async (req, res) => {
       'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
     );
 
-    res.send(buffer);
+    // Send Excel file as raw binary
+    res.send(excelBuffer);
+
+    // Optionally: return email template as a header (if small) or log it
+    // Example: console.log('Email template:', { subject, body });
+
   } catch (error) {
     console.error("Excel generation error:", error);
     res.status(500).json({ error: "Error generating Excel", details: error.message });
@@ -36,5 +47,4 @@ app.post('/generate-excel', async (req, res) => {
 
 app.listen(PORT, () => {
   console.log(`🚀 Server running on port ${PORT}`);
-  
 });
