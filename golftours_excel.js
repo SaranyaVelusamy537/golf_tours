@@ -50,7 +50,7 @@ async function generateExcelWithDynamicItinerary(data) {
 
     // Row 1: Day of Week
     if (dayData.day_of_week) {
-      sheet.getCell(`B${map.day_of_week}`).value = dayData.day_of_week;
+      sheet.getCell(`A${map.day_of_week}`).value = dayData.day_of_week;
     }
 
     // Hotel
