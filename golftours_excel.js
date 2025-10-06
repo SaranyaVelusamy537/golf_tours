@@ -11,7 +11,7 @@ async function generateExcelWithDynamicItinerary(data) {
 
   // Fill basic info
   sheet.getCell('K5').value = data.lead_name + ' Group';
-  sheet.getCell('L5').value = data.team_member;
+  // sheet.getCell('L5').value = data.team_member;
   sheet.getCell('I16').value = data.golfers;
   sheet.getCell('K16').value = data.non_golfers;
 
