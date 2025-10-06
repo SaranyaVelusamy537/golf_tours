@@ -45,8 +45,15 @@ async function generateExcelWithDynamicItinerary(data) {
     const map = dayCellMap[index];
     if (!map) return;
 
-    // Row 1: Date + Hotel
+    // Row 1: Date
     sheet.getCell(`A${map.date}`).value = dayData.date;
+
+    // Row 1: Day of Week
+    if (dayData.day_of_week) {
+      sheet.getCell(`B${map.day_of_week}`).value = dayData.day_of_week;
+    }
+
+    // Hotel
     if (dayData.hotel_stay && dayData.hotel_stay.length > 0) {
       const hotel = dayData.hotel_stay[0];
       sheet.getCell(`B${map.hotel}`).value = hotel.hotel;
@@ -54,14 +61,14 @@ async function generateExcelWithDynamicItinerary(data) {
       sheet.getCell(`D${map.hotel}`).value = hotel.Hotel_Single;
     }
 
-    // Row 2: Day of Week + Golf
+    // Golf
     if (dayData.Golf_round && dayData.Golf_round.length > 0) {
       const golf = dayData.Golf_round[0];
       sheet.getCell(`B${map.golf}`).value = golf.course;
       sheet.getCell(`E${map.golf}`).value = golf.Golf;
     }
 
-    // Row 3: Transport
+    // Transport
     if (dayData.transport && dayData.transport.length > 0) {
       const transport = dayData.transport[0];
       sheet.getCell(`B${map.transport}`).value = transport.transport_type;
