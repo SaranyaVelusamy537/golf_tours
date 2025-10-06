@@ -16,11 +16,13 @@ app.post('/generate-excel', async (req, res) => {
     }
 
     const buffer = await generateExcelWithDynamicItinerary(data);
+
+    // Correct filename
     const group_filename = data.lead_name.trim().replace(/\s+/g, "_") + ".xlsx";
 
     res.setHeader(
       'Content-Disposition',
-      'attachment; filename="${group_filename}"; filename*=UTF-8''${encodeURIComponent(group_filename)}'
+      `attachment; filename="${group_filename}"; filename*=UTF-8''${encodeURIComponent(group_filename)}`
     );
     res.setHeader(
       'Content-Type',
