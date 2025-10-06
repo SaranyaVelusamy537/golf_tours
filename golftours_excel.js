@@ -25,7 +25,7 @@ async function generateExcelWithDynamicItinerary(data) {
   const dayCellMap = [
     { date: 15, hotel: 15, golf: 16, transport: 17 }, // Day 1
     { date: 20, hotel: 20, golf: 21, transport: 22 }, // Day 2
-    { date: 38, hotel: 38, golf: 39, transport: 40 }, // Day 3
+    { date: 25, hotel: 25, golf: 26, transport: 27 }, // Day 3
     { date: 56, hotel: 56, golf: 57, transport: 58 }, // Day 4
     { date: 74, hotel: 74, golf: 75, transport: 76 }, // Day 5
     // add more if template has more days
