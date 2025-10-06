@@ -173,10 +173,12 @@ Your AI Agent
     json: { subject, body },
     binary: {
       excelFile: {
-        data: excelBuffer.toString('base64'),
+        data: excelBuffer,  // raw bytes
         mimeType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
         fileName: `${data.lead_name}_Quotation.xlsx`
-      }
+  }
+}
+
     }
   };
 }
