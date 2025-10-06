@@ -69,19 +69,7 @@ async function generateExcelWithDynamicItinerary(data) {
     }
   });
 
-// Generate buffer as before
-const buffer = await workbook.xlsx.writeBuffer();
-
-// Create filename from lead_name
-const groupFilename = data.lead_name.trim().toLowerCase().replace(/\s+/g, '_') + '.xlsx';
-
-// Return buffer as before, but attach the new filename in binary object
-return {
-  buffer,           // same as before
-  fileName: groupFilename,  // <-- updated filename
-  mimeType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
-};
-
+  return workbook.xlsx.writeBuffer();
 }
 
 module.exports = { generateExcelWithDynamicItinerary };
