@@ -31,15 +31,17 @@ async function generateExcelWithDynamicItinerary(data) {
   ];
 
   const itineraryDays = Object.keys(data.itinerary);
+  let lastCurrencySymbol = '€'; // fallback if no transport exists
 
   itineraryDays.forEach((dayKey, index) => {
     const dayData = data.itinerary[dayKey];
     const map = dayCellMap[index];
     if (!map) return;
 
-    // Determine currency for this day (fallback €)
+    // Determine currency for this day (fallback lastCurrencySymbol)
     const transport = dayData.transport?.[0];
-    const currencySymbol = transport?.currency_hint || '€';
+    const currencySymbol = transport?.currency_hint || lastCurrencySymbol;
+    lastCurrencySymbol = currencySymbol; // store for remaining days
     const currencyFormat = `"${currencySymbol}"#,##0.00;[Red]\-"${currencySymbol}"#,##0.00`;
 
     // Date
@@ -75,13 +77,12 @@ async function generateExcelWithDynamicItinerary(data) {
     sheet.getCell(`F${map.transport}`).numFmt = currencyFormat;
   });
 
-  // Apply default currency € to remaining empty days
+  // Apply lastCurrencySymbol to remaining empty days
+  const remainingFormat = `"${lastCurrencySymbol}"#,##0.00;[Red]\-"${lastCurrencySymbol}"#,##0.00`;
   dayCellMap.slice(itineraryDays.length).forEach(map => {
-    const defaultCurrency = '€';
-    const defaultFormat = `"${defaultCurrency}"#,##0.00;[Red]\-"${defaultCurrency}"#,##0.00`;
-    ['C','D'].forEach(col => sheet.getCell(`${col}${map.hotel}`).numFmt = defaultFormat);
-    sheet.getCell(`E${map.golf}`).numFmt = defaultFormat;
-    sheet.getCell(`F${map.transport}`).numFmt = defaultFormat;
+    ['C','D'].forEach(col => sheet.getCell(`${col}${map.hotel}`).numFmt = remainingFormat);
+    sheet.getCell(`E${map.golf}`).numFmt = remainingFormat;
+    sheet.getCell(`F${map.transport}`).numFmt = remainingFormat;
   });
 
   return workbook.xlsx.writeBuffer();
