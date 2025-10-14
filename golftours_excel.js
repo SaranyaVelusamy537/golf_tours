@@ -14,7 +14,7 @@ async function generateExcelWithDynamicItinerary(data) {
   sheet.getCell('I16').value = data.golfers;
   sheet.getCell('K16').value = data.non_golfers;
 
-  // Fixed row map for itinerary days
+  // Fill itinerary using fixed row map
   const dayCellMap = [
     { date: 15, day_of_week:16, hotel: 15, golf: 16, transport: 17 }, // Day 1
     { date: 20, day_of_week:21, hotel: 20, golf: 21, transport: 22 }, // Day 2
@@ -32,18 +32,15 @@ async function generateExcelWithDynamicItinerary(data) {
 
   const itineraryDays = Object.keys(data.itinerary);
 
+  // Determine currency symbol from first day's transport.currency_hint (fallback €)
+  const firstDayTransport = itineraryDays.length && data.itinerary[itineraryDays[0]].transport?.[0];
+  const currencySymbol = firstDayTransport?.currency_hint || '€';
+  const currencyFormat = `"${currencySymbol}"#,##0.00;[Red]\-"${currencySymbol}"#,##0.00`;
+
   itineraryDays.forEach((dayKey, index) => {
     const dayData = data.itinerary[dayKey];
     const map = dayCellMap[index];
     if (!map) return;
-
-    // Determine currency symbol from transport.currency_hint (fallback €)
-    const currencySymbol = dayData.transport && dayData.transport.length > 0
-      ? dayData.transport[0].currency_hint || '€'
-      : '€';
-
-    // ExcelJS number format with currency
-    const currencyFormat = `"${currencySymbol}"#,##0.00;[Red]\-"${currencySymbol}"#,##0.00`;
 
     // Row 1: Date
     sheet.getCell(`A${map.date}`).value = dayData.date;
@@ -57,35 +54,46 @@ async function generateExcelWithDynamicItinerary(data) {
     if (dayData.hotel_stay && dayData.hotel_stay.length > 0) {
       const hotel = dayData.hotel_stay[0];
       sheet.getCell(`B${map.hotel}`).value = hotel.hotel;
+      sheet.getCell(`C${map.hotel}`).value = hotel.Hotel_Sharing;
+      sheet.getCell(`D${map.hotel}`).value = hotel.Hotel_Single;
 
-      const sharingCell = sheet.getCell(`C${map.hotel}`);
-      sharingCell.value = hotel.Hotel_Sharing;
-      sharingCell.numFmt = currencyFormat;
-
-      const singleCell = sheet.getCell(`D${map.hotel}`);
-      singleCell.value = hotel.Hotel_Single;
-      singleCell.numFmt = currencyFormat;
+      // Apply currency format
+      ['C','D'].forEach(col => {
+        sheet.getCell(`${col}${map.hotel}`).numFmt = currencyFormat;
+      });
+    } else {
+      // Apply currency format to empty cells
+      ['C','D'].forEach(col => {
+        sheet.getCell(`${col}${map.hotel}`).numFmt = currencyFormat;
+      });
     }
 
     // Golf
     if (dayData.Golf_round && dayData.Golf_round.length > 0) {
       const golf = dayData.Golf_round[0];
       sheet.getCell(`B${map.golf}`).value = golf.course;
-
-      const golfCell = sheet.getCell(`E${map.golf}`);
-      golfCell.value = golf.Golf;
-      golfCell.numFmt = currencyFormat;
+      sheet.getCell(`E${map.golf}`).value = golf.Golf;
+      sheet.getCell(`E${map.golf}`).numFmt = currencyFormat;
+    } else {
+      sheet.getCell(`E${map.golf}`).numFmt = currencyFormat;
     }
 
     // Transport
     if (dayData.transport && dayData.transport.length > 0) {
       const transport = dayData.transport[0];
       sheet.getCell(`B${map.transport}`).value = transport.transport_type;
-
-      const transportCell = sheet.getCell(`F${map.transport}`);
-      transportCell.value = transport.rate_per_person;
-      transportCell.numFmt = currencyFormat;
+      sheet.getCell(`F${map.transport}`).value = transport.rate_per_person;
+      sheet.getCell(`F${map.transport}`).numFmt = currencyFormat;
+    } else {
+      sheet.getCell(`F${map.transport}`).numFmt = currencyFormat;
     }
+  });
+
+  // Also ensure remaining day rows (Day 6-12) have currency format even if empty
+  dayCellMap.slice(itineraryDays.length).forEach(map => {
+    ['C','D'].forEach(col => sheet.getCell(`${col}${map.hotel}`).numFmt = currencyFormat);
+    sheet.getCell(`E${map.golf}`).numFmt = currencyFormat;
+    sheet.getCell(`F${map.transport}`).numFmt = currencyFormat;
   });
 
   return workbook.xlsx.writeBuffer();
