@@ -11,17 +11,10 @@ async function generateExcelWithDynamicItinerary(data) {
 
   // Fill basic info
   sheet.getCell('K5').value = data.lead_name + ' Group';
-  // sheet.getCell('L5').value = data.team_member;
   sheet.getCell('I16').value = data.golfers;
   sheet.getCell('K16').value = data.non_golfers;
 
-  // Fill FIT rates
-  // sheet.getCell('I12').value = data.margin.golfer_margins.total_fit_rate_per_sharing;
-  // sheet.getCell('J12').value = data.margin.golfer_margins.total_fit_rate_per_single;
-  // sheet.getCell('K12').value = data.margin.non_golfer_margins.total_fit_rate_per_nongolfer_sharing;
-  // sheet.getCell('L12').value = data.margin.non_golfer_margins.total_fit_rate_per_nongolfer_single;
-
-  // Fill itinerary using fixed row map
+  // Fixed row map for itinerary days
   const dayCellMap = [
     { date: 15, day_of_week:16, hotel: 15, golf: 16, transport: 17 }, // Day 1
     { date: 20, day_of_week:21, hotel: 20, golf: 21, transport: 22 }, // Day 2
@@ -34,8 +27,7 @@ async function generateExcelWithDynamicItinerary(data) {
     { date: 55, day_of_week:56, hotel: 55, golf: 56, transport: 57 }, // Day 9
     { date: 60, day_of_week:61, hotel: 60, golf: 61, transport: 62 }, // Day 10
     { date: 65, day_of_week:66, hotel: 65, golf: 66, transport: 67 }, // Day 11
-    { date: 70, day_of_week:71, hotel: 70, golf: 71, transport: 72 }, // Day 12
-    // add more if template has more days
+    { date: 70, day_of_week:71, hotel: 70, golf: 71, transport: 72 }  // Day 12
   ];
 
   const itineraryDays = Object.keys(data.itinerary);
@@ -44,6 +36,14 @@ async function generateExcelWithDynamicItinerary(data) {
     const dayData = data.itinerary[dayKey];
     const map = dayCellMap[index];
     if (!map) return;
+
+    // Determine currency symbol from transport.currency_hint (fallback €)
+    const currencySymbol = dayData.transport && dayData.transport.length > 0
+      ? dayData.transport[0].currency_hint || '€'
+      : '€';
+
+    // ExcelJS number format with currency
+    const currencyFormat = `"${currencySymbol}"#,##0.00;[Red]\-"${currencySymbol}"#,##0.00`;
 
     // Row 1: Date
     sheet.getCell(`A${map.date}`).value = dayData.date;
@@ -57,22 +57,34 @@ async function generateExcelWithDynamicItinerary(data) {
     if (dayData.hotel_stay && dayData.hotel_stay.length > 0) {
       const hotel = dayData.hotel_stay[0];
       sheet.getCell(`B${map.hotel}`).value = hotel.hotel;
-      sheet.getCell(`C${map.hotel}`).value = hotel.Hotel_Sharing;
-      sheet.getCell(`D${map.hotel}`).value = hotel.Hotel_Single;
+
+      const sharingCell = sheet.getCell(`C${map.hotel}`);
+      sharingCell.value = hotel.Hotel_Sharing;
+      sharingCell.numFmt = currencyFormat;
+
+      const singleCell = sheet.getCell(`D${map.hotel}`);
+      singleCell.value = hotel.Hotel_Single;
+      singleCell.numFmt = currencyFormat;
     }
 
     // Golf
     if (dayData.Golf_round && dayData.Golf_round.length > 0) {
       const golf = dayData.Golf_round[0];
       sheet.getCell(`B${map.golf}`).value = golf.course;
-      sheet.getCell(`E${map.golf}`).value = golf.Golf;
+
+      const golfCell = sheet.getCell(`E${map.golf}`);
+      golfCell.value = golf.Golf;
+      golfCell.numFmt = currencyFormat;
     }
 
     // Transport
     if (dayData.transport && dayData.transport.length > 0) {
       const transport = dayData.transport[0];
       sheet.getCell(`B${map.transport}`).value = transport.transport_type;
-      sheet.getCell(`F${map.transport}`).value = transport.rate_per_person;
+
+      const transportCell = sheet.getCell(`F${map.transport}`);
+      transportCell.value = transport.rate_per_person;
+      transportCell.numFmt = currencyFormat;
     }
   });
 
