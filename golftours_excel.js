@@ -14,7 +14,7 @@ async function generateExcelWithDynamicItinerary(data) {
   sheet.getCell('I16').value = Number(data.golfers || 0);
   sheet.getCell('K16').value = Number(data.non_golfers || 0);
 
-  // ===== 12 rows mapping =====
+  // ===== 12-day cell map =====
   const dayCellMap = [
     { date: 15, day_of_week:16, hotel: 15, golf: 16, transport: 17 },
     { date: 20, day_of_week:21, hotel: 20, golf: 21, transport: 22 },
@@ -33,69 +33,54 @@ async function generateExcelWithDynamicItinerary(data) {
   const itineraryDays = Object.keys(data.itinerary || {});
   let lastCurrencySymbol = '€';
 
-  // Helper to build an Excel number format for a currency symbol
+  // ===== Helper to build Excel number format =====
   const fmtFor = (sym) => `"${sym}"#,##0.00;[Red]\\-"${sym}"#,##0.00`;
 
-  // ===== Pass 1: reset/format all 12 days (so even "empty" days change) =====
-  dayCellMap.forEach((map) => {
-    // Clear text/value cells
-    sheet.getCell(`A${map.date}`).value = null;         // date
-    sheet.getCell(`A${map.day_of_week}`).value = null;  // day name
-    sheet.getCell(`B${map.hotel}`).value = null;        // hotel name
-    sheet.getCell(`B${map.golf}`).value = null;         // golf course
-    sheet.getCell(`B${map.transport}`).value = null;    // transport type
-
-    // Clear numeric cells
-    ['C','D'].forEach(col => { sheet.getCell(`${col}${map.hotel}`).value = null; });
-    sheet.getCell(`E${map.golf}`).value = null;
-    sheet.getCell(`F${map.transport}`).value = null;
-
-    // Apply default € format to all money cells up front
-    const euroFmt = fmtFor('€');
-    ['C','D'].forEach(col => { sheet.getCell(`${col}${map.hotel}`).numFmt = euroFmt; });
-    sheet.getCell(`E${map.golf}`).numFmt = euroFmt;
-    sheet.getCell(`F${map.transport}`).numFmt = euroFmt;
-  });
-
-  // ===== Pass 2: write available data, carrying forward currency hints =====
+  // ===== Pass: iterate through all 12 rows =====
   for (let i = 0; i < dayCellMap.length; i++) {
     const map = dayCellMap[i];
-    const dayKey = itineraryDays[i];                // if fewer than 12, this is undefined
+    const dayKey = itineraryDays[i];
     const dayData = dayKey ? (data.itinerary[dayKey] || {}) : {};
 
-    // Determine currency symbol for this day (if any), else carry forward, else €
+    // Determine symbol and format
     const transport = dayData.transport?.[0];
     const currencySymbol = transport?.currency_hint || lastCurrencySymbol || '€';
     lastCurrencySymbol = currencySymbol;
     const currencyFormat = fmtFor(currencySymbol);
 
-    // Date & Day of Week
-    if (dayData.date) sheet.getCell(`A${map.date}`).value = dayData.date;
-    if (dayData.day_of_week) sheet.getCell(`A${map.day_of_week}`).value = dayData.day_of_week;
+    // Date & day name
+    sheet.getCell(`A${map.date}`).value = dayData.date || null;
+    sheet.getCell(`A${map.day_of_week}`).value = dayData.day_of_week || null;
 
     // Hotel
-    if (Array.isArray(dayData.hotel_stay) && dayData.hotel_stay.length > 0) {
-      const hotel = dayData.hotel_stay[0];
-      sheet.getCell(`B${map.hotel}`).value = hotel.hotel || null;
-      sheet.getCell(`C${map.hotel}`).value = hotel.Hotel_Sharing ?? null;
-      sheet.getCell(`D${map.hotel}`).value = hotel.Hotel_Single ?? null;
-    }
-    ['C','D'].forEach(col => sheet.getCell(`${col}${map.hotel}`).numFmt = currencyFormat);
+    let hotel = dayData.hotel_stay?.[0];
+    sheet.getCell(`B${map.hotel}`).value = hotel?.hotel || null;
+    sheet.getCell(`C${map.hotel}`).value = hotel?.Hotel_Sharing ?? 0;
+    sheet.getCell(`D${map.hotel}`).value = hotel?.Hotel_Single ?? 0;
+    ['C', 'D'].forEach(col => {
+      const cell = sheet.getCell(`${col}${map.hotel}`);
+      cell.numFmt = currencyFormat;
+      if (!cell.value) cell.value = 0;
+    });
 
     // Golf
-    if (Array.isArray(dayData.Golf_round) && dayData.Golf_round.length > 0) {
-      const golf = dayData.Golf_round[0];
-      sheet.getCell(`B${map.golf}`).value = golf.course || null;
-      sheet.getCell(`E${map.golf}`).value = golf.Golf ?? null;
+    let golf = dayData.Golf_round?.[0];
+    sheet.getCell(`B${map.golf}`).value = golf?.course || null;
+    sheet.getCell(`E${map.golf}`).value = golf?.Golf ?? 0;
+    {
+      const cell = sheet.getCell(`E${map.golf}`);
+      cell.numFmt = currencyFormat;
+      if (!cell.value) cell.value = 0;
     }
-    sheet.getCell(`E${map.golf}`).numFmt = currencyFormat;
 
     // Transport
-    if (Array.isArray(dayData.transport) && dayData.transport.length > 0) {
-      sheet.getCell(`B${map.transport}`).value = transport.transport_type || null;
-      sheet.getCell(`F${map.transport}`).value = transport.rate_per_person ?? null;
+    sheet.getCell(`B${map.transport}`).value = transport?.transport_type || null;
+    sheet.getCell(`F${map.transport}`).value = transport?.rate_per_person ?? 0;
+    {
+      const cell = sheet.getCell(`F${map.transport}`);
+      cell.numFmt = currencyFormat;
+      if (!cell.value) cell.value = 0;
     }
-    sheet.getCell(`F${map.transport}`).numFmt = currencyFormat;
   }
 
   return workbook.xlsx.writeBuffer();
